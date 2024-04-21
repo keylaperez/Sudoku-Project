@@ -2,7 +2,6 @@ import pygame as pg
 import sys
 from sudoku_generator import generate_sudoku
 
-
 def main_menu(screen):
     # Initialize Font
     title_font = pg.font.Font(None, 100)
@@ -45,26 +44,127 @@ def main_menu(screen):
             if event.type == pg.MOUSEBUTTONDOWN:
                 for i, rect in enumerate(button_rects):
                     if rect.collidepoint(event.pos):
-                        # Return the number of empty cells based on difficulty
                         return 30 + 10 * i  # 30 for Easy, 40 for Medium, 50 for Hard
 
+def win_screen(screen):
+
+    title_font = pg.font.Font(None, 100)
+    sub_font = pg.font.Font(None, 75)
+    button_font = pg.font.Font(None, 60)
+
+    # Initialize Colors
+    bg_color = (60, 55, 68)
+    text_color = (251, 255, 241)
+    button_color = (48, 102, 190)
+
+    # Render text to screen
+    screen.fill(bg_color)
+
+    title_surface = title_font.render("Game Won!", True, text_color)
+    title_rectangle = title_surface.get_rect(center=(900 // 2, 900 // 2 - 250))
+    exit_text = button_font.render("Exit", 0, text_color)
+    button_surface = pg.Surface((title_surface.get_width() + 20, title_surface.get_height() + 20))
+    button_surface.fill(button_color)
+    screen.blit(title_surface, title_rectangle)
+    buttons = ["Exit"]
+    button_rects = []
+    for i, text in enumerate(buttons):
+        text_surface = button_font.render(text, True, text_color)
+        button_surface = pg.Surface((text_surface.get_width() + 20, text_surface.get_height() + 20))
+        button_surface.fill(button_color)
+        button_surface.blit(text_surface, (10, 10))
+        rect = button_surface.get_rect(center=(900 // 2, 900 // 2 + 100 + i * 100))
+        screen.blit(button_surface, rect)
+        button_rects.append(rect)
+
+    # button_surface.blit(exit_text, (10,10))
+    pg.display.flip()
+
+    while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            if event.type == pg.MOUSEBUTTONDOWN:
+                pg.quit()
+                sys.exit()
+
+def loss_screen(screen):
+
+    title_font = pg.font.Font(None, 100)
+    sub_font = pg.font.Font(None, 75)
+    button_font = pg.font.Font(None, 60)
+
+    # Initialize Colors
+    bg_color = (60, 55, 68)
+    text_color = (251, 255, 241)
+    button_color = (48, 102, 190)
+
+    # Render text to screen
+    screen.fill(bg_color)
+
+    title_surface = title_font.render("You lost :(", True, text_color)
+    title_rectangle = title_surface.get_rect(center=(900 // 2, 900 // 2 - 250))
+    restart_text = button_font.render("Restart", 0, text_color)
+    button_surface = pg.Surface((title_surface.get_width() + 20, title_surface.get_height() + 20))
+    button_surface.fill(button_color)
+    screen.blit(title_surface, title_rectangle)
+    buttons = ["Restart"]
+    button_rects = []
+    for i, text in enumerate(buttons):
+        text_surface = button_font.render(text, True, text_color)
+        button_surface = pg.Surface((text_surface.get_width() + 20, text_surface.get_height() + 20))
+        button_surface.fill(button_color)
+        button_surface.blit(text_surface, (10, 10))
+        rect = button_surface.get_rect(center=(900 // 2, 900 // 2 + 100 + i * 100))
+        screen.blit(button_surface, rect)
+        button_rects.append(rect)
+
+    # button_surface.blit(exit_text, (10,10))
+    pg.display.flip()
+
+    while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            if event.type == pg.MOUSEBUTTONDOWN:
+                main()
+
+
+def is_solved_correctly(board):
+    expected = set(range(1, 10))
+
+    # Check rows
+    for row in board:
+        if set(row) != expected:
+            return False
+
+    # Check columns
+    for col in range(9):
+        column = [board[row][col] for row in range(9)]
+        if set(column) != expected:
+            return False
+
+    # Check 3x3 squares
+    for row in range(0, 9, 3):
+        for col in range(0, 9, 3):
+            block = [board[x][y] for x in range(row, row + 3) for y in range(col, col + 3)]
+            if set(block) != expected:
+                return False
+
+    return True
+
+def sketch_cell(screen, row, col, num):
+    font = pg.font.Font(None, 40)
+    text_color = (128, 128, 128)  # Grey color for sketch numbers
+    text = font.render(f"{num}", True, text_color)
+    CELL_SIZE = 60
+    GRID_ORIGIN = (50, 50)
+    screen.blit(text, (GRID_ORIGIN[0] + col * CELL_SIZE + 5, GRID_ORIGIN[1] + row * CELL_SIZE))
 
 def play_screen(cells_removed, screen):
-    def generate_sudoku_board(cells_removed):
-        # Generate a Sudoku board with the specified number of empty cells
-        return generate_sudoku(9, cells_removed)
-
-    def is_board_solved(board):
-        # to check if the Sudoku board is solved correctly
-        pass
-
-    def is_board_full(board):
-        for row in board:
-            if 0 in row:
-                return False
-        return True
-
-    board = generate_sudoku_board(cells_removed)
+    board = generate_sudoku(9, cells_removed)
     original_board = [row[:] for row in board]  # Copy of the original board
     font = pg.font.Font(None, 40)
     CELL_SIZE = 60
@@ -72,6 +172,11 @@ def play_screen(cells_removed, screen):
     BLACK = (0, 0, 0)
     GREY = (200, 200, 200)
     selected_cell = None
+    sketch_mode = False
+    sketch_value = None
+
+    def board_is_full(board):
+        return all(cell != 0 for row in board for cell in row)
 
     def draw_grid():
         for x in range(10):
@@ -91,26 +196,39 @@ def play_screen(cells_removed, screen):
 
     def draw_selected():
         if selected_cell:
-            pg.draw.rect(screen, (255, 0, 0), (
-            GRID_ORIGIN[0] + selected_cell[1] * CELL_SIZE, GRID_ORIGIN[1] + selected_cell[0] * CELL_SIZE, CELL_SIZE,
-            CELL_SIZE), 3)
+            pg.draw.rect(screen, (255, 0, 0),
+                         (GRID_ORIGIN[0] + selected_cell[1] * CELL_SIZE, GRID_ORIGIN[1] + selected_cell[0] * CELL_SIZE,
+                          CELL_SIZE, CELL_SIZE), 3)
 
     def handle_mouse_click(pos):
-        if pos[0] < GRID_ORIGIN[0] or pos[1] < GRID_ORIGIN[1] or pos[0] > GRID_ORIGIN[0] + 9 * CELL_SIZE or pos[1] > \
-                GRID_ORIGIN[1] + 9 * CELL_SIZE:
+        if pos[0] < GRID_ORIGIN[0] or pos[1] < GRID_ORIGIN[1] or pos[0] > GRID_ORIGIN[0] + 9 * CELL_SIZE or pos[
+            1] > GRID_ORIGIN[1] + 9 * CELL_SIZE:
             return None
         row = (pos[1] - GRID_ORIGIN[1]) // CELL_SIZE
         col = (pos[0] - GRID_ORIGIN[0]) // CELL_SIZE
-        return (row, col)
+        return row, col
+
+    def handle_arrow_buttons(selected_cell, direction):
+        row, col = selected_cell
+        if direction == 'up' and row > 0:
+            row -= 1
+        elif direction == 'down' and row < 8:
+            row += 1
+        elif direction == 'left' and col > 0:
+            col -= 1
+        elif direction == 'right' and col < 8:
+            col += 1
+
+        return row, col
 
     def draw_buttons():
         buttons = ["Reset", "Restart", "Exit"]
         button_actions = []
         for i, button in enumerate(buttons):
-            button_rect = pg.Rect(50 + i * 250, 600, 200, 40)
+            button_rect = pg.Rect(50, 600 + i * 50, 200, 40)
             pg.draw.rect(screen, (180, 180, 255), button_rect)
             text = font.render(button, True, BLACK)
-            screen.blit(text, (50 + i * 250 + 10, 600 + 10))
+            screen.blit(text, (50 + 10, 600 + i * 50 + 10))
             button_actions.append((button_rect, button))
         return button_actions
 
@@ -136,100 +254,42 @@ def play_screen(cells_removed, screen):
                         elif action == "Exit":
                             pg.quit()
                             sys.exit()
+                if selected_cell:
+                    if event.button == 1:  # Left mouse button
+                        if original_board[selected_cell[0]][selected_cell[1]] == 0:
+                            sketch_mode = True
+                            sketch_value = 0
+                        else:
+                            sketch_mode = False
+                            sketch_value = None
+                    elif event.button == 3:  # Right mouse button
+                        sketch_mode = False
+                        sketch_value = None
             elif event.type == pg.KEYDOWN and selected_cell:
                 if event.unicode.isdigit():
                     num = int(event.unicode)
-                    if original_board[selected_cell[0]][selected_cell[1]] == 0:  # Only modify empty cells
-                        board[selected_cell[0]][selected_cell[1]] = num
+                    if sketch_mode and original_board[selected_cell[0]][selected_cell[1]] == 0:
+                        sketch_value = num
+                elif event.key == pg.K_RETURN and sketch_mode:
+                    board[selected_cell[0]][selected_cell[1]] = sketch_value
+                    sketch_mode = False
+                    sketch_value = None
+                elif event.key in [pg.K_UP, pg.K_DOWN, pg.K_LEFT, pg.K_RIGHT]:
+                    direction = ''
+                    if event.key == pg.K_UP:
+                        direction = 'up'
+                    elif event.key == pg.K_DOWN:
+                        direction = 'down'
+                    elif event.key == pg.K_LEFT:
+                        direction = 'left'
+                    elif event.key == pg.K_RIGHT:
+                        direction = 'right'
+                    selected_cell = handle_arrow_buttons(selected_cell, direction)
 
-        # Check if the game is over
-        if is_board_full(board):
-            if is_board_solved(board):
-                game_won_screen(screen)
-            else:
-                game_over_screen(screen)
+        if sketch_mode and selected_cell:
+            sketch_cell(screen, selected_cell[0], selected_cell[1], sketch_value)
 
         pg.display.flip()
-
-
-def game_over_screen(screen):
-    font = pg.font.Font(None, 60)
-    GREY = (60, 55, 68)
-
-    screen.fill(GREY)
-    text_surface = font.render("Game Over :(", True, (251, 255, 241))
-    text_rect = text_surface.get_rect(center=(450, 200))
-    screen.blit(text_surface, text_rect)
-
-    button_rects = draw_game_over_buttons(screen)
-
-    pg.display.flip()
-
-    while True:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-            if event.type == pg.MOUSEBUTTONDOWN:
-                for rect, action in button_rects:
-                    if rect.collidepoint(event.pos):
-                        if action == "Restart":
-                            main()
-
-
-def draw_game_over_buttons(screen):
-    font = pg.font.Font(None, 40)
-    button_rects = []
-    buttons = ["Restart"]
-    for i, text in enumerate(buttons):
-        button_rect = pg.Rect(250, 400, 400, 80)
-        pg.draw.rect(screen, (180, 180, 255), button_rect)
-        text_surface = font.render(text, True, (0, 0, 0))
-        text_rect = text_surface.get_rect(center=button_rect.center)
-        screen.blit(text_surface, text_rect)
-        button_rects.append((button_rect, text))
-    return button_rects
-
-
-def game_won_screen(screen):
-    font = pg.font.Font(None, 60)
-    GREY = (60, 55, 68)
-
-    screen.fill(GREY)
-    text_surface = font.render("Game Won!", True, (251, 255, 241))
-    text_rect = text_surface.get_rect(center=(450, 200))
-    screen.blit(text_surface, text_rect)
-
-    button_rects = draw_game_won_buttons(screen)
-
-    pg.display.flip()
-
-    while True:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-            if event.type == pg.MOUSEBUTTONDOWN:
-                for rect, action in button_rects:
-                    if rect.collidepoint(event.pos):
-                        if action == "Exit":
-                            pg.quit()
-                            sys.exit()
-
-
-def draw_game_won_buttons(screen):
-    font = pg.font.Font(None, 40)
-    button_rects = []
-    buttons = ["Exit"]
-    for i, text in enumerate(buttons):
-        button_rect = pg.Rect(250, 400, 400, 80)
-        pg.draw.rect(screen, (180, 180, 255), button_rect)
-        text_surface = font.render(text, True, (0, 0, 0))
-        text_rect = text_surface.get_rect(center=button_rect.center)
-        screen.blit(text_surface, text_rect)
-        button_rects.append((button_rect, text))
-    return button_rects
-
 
 def main():
     pg.init()
@@ -239,6 +299,6 @@ def main():
     play_screen(cells_removed, game)
     pg.quit()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
+
